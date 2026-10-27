@@ -305,9 +305,12 @@ try{
 function info(h,dl){$('#dtxt').innerHTML=h;$('#dl').hidden=!dl;$('#dlg').showModal()}
 $('#dx').onclick=()=>$('#dlg').close();
 $('#dl').onclick=()=>{
- const u=location.href.split('#')[0],mac=/Mac/.test(navigator.platform);
- const txt=mac?`<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>URL</key><string>${u}</string></dict></plist>`:`[InternetShortcut]\r\nURL=${u}\r\n`;
- const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));a.download='Yazılı Rehberi'+(mac?'.webloc':'.url');a.click();
+ const u=location.href.split('#')[0],mac=/Mac/.test(navigator.platform),ff=/Firefox/.test(navigator.userAgent);
+ let txt,ext,type='text/plain';
+ if(ff){ext='.html';type='text/html';txt=`<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><title>Yazılı Rehberi</title><meta http-equiv="refresh" content="0;url=${u}"></head><body><a href="${u}">Yazılı Rehberi’ni aç</a></body></html>`}
+ else if(mac){ext='.webloc';txt=`<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>URL</key><string>${u}</string></dict></plist>`}
+ else{ext='.url';txt=`[InternetShortcut]\r\nURL=${u}\r\n`}
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download='Yazılı Rehberi'+ext;a.click();
 };
 $('#install').onclick=async()=>{
  if(dp){dp.prompt();await dp.userChoice;dp=null;return}
@@ -317,7 +320,7 @@ $('#install').onclick=async()=>{
  if(ios)info((saf?'Safari’de':'Tarayıcıda')+' alttaki <b>Paylaş</b> düğmesine dokun, sonra <b>Ana Ekrana Ekle</b>’yi seç. Bu seçenek görünmüyorsa sayfayı Safari’de aç.'+warn);
  else if(and&&ff)info('Firefox’ta üç nokta menüsünü aç, sonra <b>Yükle</b> ya da <b>Ana ekrana ekle</b>’yi seç.'+warn);
  else if(and)info('Tarayıcının üç nokta menüsünü aç, sonra <b>Ana ekrana ekle</b> ya da <b>Uygulamayı yükle</b>’yi seç.'+warn);
- else if(ff)info('Firefox bilgisayarda uygulama yüklemeyi desteklemiyor. Kısayolu indirip masaüstüne taşıyabilir ya da sayfayı yer imlerine ekleyebilirsin (Ctrl+D).',true);
+ else if(ff)info('Firefox bilgisayarda uygulama yüklemeyi desteklemiyor. “Kısayolu indir” ile inen <b>Yazılı Rehberi.html</b> dosyasını masaüstüne taşı, çift tıklayınca sayfa açılır. Sayfayı yer imlerine de ekleyebilirsin (Ctrl+D).',true);
  else if(saf)info('Safari’de <b>Dosya</b> menüsünden <b>Dock’a Ekle</b>’yi seç. İstersen kısayolu da indirebilirsin.',true);
  else info('Tarayıcın otomatik yüklemeyi sunmuyor. Kısayolu indirip masaüstüne taşıyabilirsin. Chrome veya Edge’de bağlantıyla açtıysan menüden <b>Kısayol oluştur</b> seçeneği de vardır.',true);
 };
