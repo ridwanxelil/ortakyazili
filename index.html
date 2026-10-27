@@ -25,7 +25,9 @@ h1{margin:0;font-size:clamp(1.5rem,4vw,2.2rem);line-height:1.2;font-weight:700}
 header p{margin:6px 0 0;color:var(--mute)}
 .btn{border:1.5px solid var(--ink);background:#fff;border-radius:10px;padding:8px 14px;font-weight:500}
 .btn:hover{background:var(--ink);color:#fff}
-.acts{display:flex;gap:8px}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+dialog{border:1.5px solid var(--ink);border-radius:14px;padding:20px;color:var(--ink);font:inherit}
+dialog::backdrop{background:rgba(28,43,75,.4)}
 .hero{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:16px}
 .sheet{background:#fff;border:1.5px solid var(--ink);border-radius:16px;padding:20px 22px 20px 44px;position:relative}
 .sheet::before{content:"";position:absolute;left:28px;top:0;bottom:0;width:2px;background:var(--red)}
@@ -93,7 +95,7 @@ footer{margin-top:28px;text-align:center;color:var(--mute);font-size:.85rem}
  .tips{margin:0}
  .tile,.tip,.stat,.sheet{break-inside:avoid}
  .tl{grid-template-columns:repeat(4,1fr);gap:8px}.tile{padding:8px 10px}
- .panel.x{break-after:auto;margin-bottom:10px}.panel.x:last-child{break-after:page}
+ .panel.x{break-after:auto;margin-bottom:10px}.panel:not(.x){break-before:page;break-after:page}.tips{break-before:page}
  .panel.x .notes textarea{min-height:40px}
 }
 </style>
@@ -107,6 +109,7 @@ footer{margin-top:28px;text-align:center;color:var(--mute);font-size:.85rem}
    <p>Özel Zehra Ortaokulu, 3–13 Kasım 2026 arasında, senaryo tabanlı açık uçlu sınavlar. Kazanımları işaretle, ilerlemeni izle.</p>
   </div>
   <div class="acts">
+   <button class="btn" id="install">Uygulama olarak ekle</button>
    <button class="btn" id="print">Yazdır / PDF kaydet</button>
    <button class="btn" id="reset">İlerlemeyi sıfırla</button>
   </div>
@@ -150,6 +153,8 @@ footer{margin-top:28px;text-align:center;color:var(--mute);font-size:.85rem}
  <footer class="noprint">Başarılar dileriz!</footer>
 </div>
 
+<dialog id="dlg"><p id="dtxt" style="margin:0 0 14px;max-width:340px"></p>
+ <div class="acts"><button class="btn" id="dl" hidden>Kısayolu indir</button><button class="btn" id="dx">Kapat</button></div></dialog>
 <script>
 const S=[
 {id:'fen',name:'Fen Bilimleri',dl:'3 Kasım',wd:'Salı',date:'2026-11-03',sen:'Senaryo 2',q:7,c:'#1f9d73',g:[
@@ -207,6 +212,7 @@ const qtxt=q=>q===null?'':q>0?q+' soru':q===0?'genel konu':'uygulama';
 const day0=d=>new Date(d+'T00:00:00'),at9=d=>new Date(d+'T09:00:00'),dEnd=d=>new Date(d+'T23:59:59');
 const status=(s,n)=>n>dEnd(s.date)?'past':n>=day0(s.date)?'today':'soon';
 const dayDiff=(s,n)=>Math.round((day0(s.date)-new Date(n.getFullYear(),n.getMonth(),n.getDate()))/864e5);
+{const n0=new Date(),k=x=>(status(x,n0)==='past'?'1':'0')+x.date;S.sort((a,b)=>k(a)<k(b)?-1:k(a)>k(b)?1:0)}
 
 function build(){
  $('#tl').innerHTML=S.map(s=>`<button class="tile" data-id="${s.id}" style="--c:${s.c}"><b>${s.dl}</b><small>${s.wd}</small><span class="n">${s.name}</span><span class="st"></span><span class="bar"><u></u></span></button>`).join('');
@@ -277,6 +283,34 @@ document.addEventListener('click',e=>{
 $('#print').onclick=()=>window.print();
 $('#reset').onclick=()=>{if(confirm('Tüm kazanım işaretleri sıfırlansın mı? Notların korunur.')){st.done={};save();refresh()}};
 
+let dp=null;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e});
+addEventListener('appinstalled',()=>{$('#install').hidden=true});
+if(matchMedia('(display-mode: standalone)').matches||navigator.standalone)$('#install').hidden=true;
+try{
+ const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');
+ x.fillStyle='#1c2b4b';x.fillRect(0,0,512,512);x.fillStyle='#fff';x.font='700 320px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('5',256,276);
+ const ic=c.toDataURL('image/png'),a=document.createElement('link');a.rel='apple-touch-icon';a.href=ic;document.head.appendChild(a);
+ if(/^https?:/.test(location.protocol)){
+  const m={name:'5. Sınıf Ortak Yazılı Rehberi',short_name:'Yazılı Rehberi',start_url:location.href.split('#')[0],display:'standalone',background_color:'#fbfcff',theme_color:'#1c2b4b',icons:[{src:ic,sizes:'512x512',type:'image/png'}]};
+  const l=document.createElement('link');l.rel='manifest';l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/manifest+json'}));document.head.appendChild(l);
+ }
+}catch(e){}
+function info(h,dl){$('#dtxt').innerHTML=h;$('#dl').hidden=!dl;$('#dlg').showModal()}
+$('#dx').onclick=()=>$('#dlg').close();
+$('#dl').onclick=()=>{
+ const u=location.href.split('#')[0],mac=/Mac/.test(navigator.platform);
+ const txt=mac?`<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>URL</key><string>${u}</string></dict></plist>`:`[InternetShortcut]\r\nURL=${u}\r\n`;
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));a.download='Yazılı Rehberi'+(mac?'.webloc':'.url');a.click();
+};
+$('#install').onclick=async()=>{
+ if(dp){dp.prompt();await dp.userChoice;dp=null;return}
+ const ua=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),and=/Android/.test(ua);
+ const warn=location.protocol==='file:'?'<br><br>Not: Sayfa telefona dosya olarak kopyalandıysa işaretlerin kaydedilmeyebilir. Sayfayı bağlantıyla açıp ekle.':'';
+ if(ios)info('Safari’de <b>Paylaş</b> düğmesine dokun, sonra <b>Ana Ekrana Ekle</b>’yi seç.'+warn);
+ else if(and)info('Tarayıcının üç nokta menüsünü aç, sonra <b>Ana ekrana ekle</b> ya da <b>Uygulamayı yükle</b>’yi seç.'+warn);
+ else info('Tarayıcın otomatik yüklemeyi sunmuyor. Kısayolu indirip masaüstüne taşıyabilirsin. Chrome veya Edge’de bağlantıyla açtıysan menüden <b>Kısayol oluştur</b> seçeneği de vardır.',true);
+};
 build();refresh();setInterval(refresh,30000);
 </script>
 </body>
